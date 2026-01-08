@@ -1,5 +1,5 @@
-from datetime import datetime
-
+# from datetime import datetime
+# removed unused import datetime "USELESS"
 
 class WatchdogStats:
     def __init__(self):

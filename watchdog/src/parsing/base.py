@@ -1,11 +1,14 @@
 import re
 from typing import Optional
-from functions import SignalStrengthDetector
+from src.parsing.signal_strength_detector import SignalStrengthDetector
 from .. import logger
+
+# TODO: Телеграм присылает и изменения сообщений и ответы на них
+# нужно либо правильно их обрабатывать либо игнорировать
+#  использовать hash и message_id + channel
 
 
 class BaseParsingUtils:
-
     @staticmethod
     def extract_price(text: str) -> Optional[float]:
         price_match = re.search(r'(BTC|ETH)/USDT-SPOT:\s*([\d,]+\.?\d*)', text)
@@ -14,9 +17,12 @@ class BaseParsingUtils:
             try:
                 price_str = price_match.group(2).replace(',', '')
                 return float(price_str)
+            
             except Exception as ex:
                 logger.warning(
-                    f"Error while price extraction: {ex}, returned NoneType\n Текст: {text[:67]}..."
+                    f"Error while price extraction: {ex}, "\
+                    f"returned NoneType"\
+                    f"\n Text: {text[:67]}..."
                 )
                 return None
         return None

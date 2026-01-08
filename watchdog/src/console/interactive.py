@@ -1,9 +1,17 @@
 import asyncio
 from .. import logger
 
+AVAILABLE_COMMANDS = """
+Доступные команды:
+stats - Показать статистику
+channels - Список каналов
+test [группа] [текст] - Тестовый парсинг текста
+reload - Перезагрузить конфигурацию
+exit - Выход
+"""
+
 
 class InteractiveConsole:
-
     def __init__(self, watchdog):
         self.watchdog = watchdog
 
@@ -14,58 +22,62 @@ class InteractiveConsole:
                     None, input, "\n> Введите команду (help для справки): "
                 )
 
-                if command.lower() == 'help':
-                    print("\nДоступные команды:")
-                    print("  stats - Показать статистику")
-                    print("  channels - Список каналов")
-                    print("  test [группа] [текст] - Тестовый парсинг текста")
-                    print("  reload - Перезагрузить конфигурацию")
-                    print("  exit - Выход")
+                print()
 
-                elif command.lower() == 'stats':
-                    print("\n📊 Текущая статистика:")
-                    for key, value in self.watchdog.stats.__dict__.items():
-                        print(f"  {key}: {value}")
+                command_lower = command.lower()
 
-                elif command.lower() == 'channels':
-                    print("\n📢 Мониторинг групп:")
-                    for group, channel in self.watchdog.config['channels'].items():
-                        print(f"  - {group}: {channel}")
+                match command_lower:
+                    case "help":
+                        print(AVAILABLE_COMMANDS)
 
-                elif command.lower().startswith('test '):
-                    parts = command.split(' ', 2)
-                    if len(parts) >= 3:
-                        group = parts[1].upper()
-                        test_text = parts[2]
-                        signal = await self.watchdog.parser.parse_signal(
-                            test_text, "test_channel", group
-                        )
-                        if signal:
-                            print(f"\n✅ Найден сигнал в группе {group}:")
-                            for key, value in signal.items():
-                                print(f"  {key}: {value}")
-                        else:
-                            print(
-                                f"\n❌ Сигнал не найден в тексте "
-                                f"для группы {group}"
+                    case "stats":
+                        print("📊 Текущая статистика:")
+
+                        for key, value in self.watchdog.stats.__dict__.items():
+                            print(f"  {key}: {value}")
+
+                    case "channels":
+                        print("📢 Мониторинг групп:")
+
+                        for group, channel in self.watchdog.config["channels"].items():
+                            print(f" - {group}: {channel}")
+
+                    case command_lower if command_lower.startswith("test "):
+                        parts = command.split(" ", 2)
+
+                        if len(parts) >= 3:
+                            group = parts[1].upper()
+                            test_text = parts[2]
+
+                            signal = await self.watchdog.parser.parse_signal(
+                                test_text, "test_channel", group
                             )
-                    else:
-                        print("\n❌ Формат: test [TOTAL|BITCOIN|ETH] [текст]")
 
-                elif command.lower() == 'reload':
-                    self.watchdog.reload_config()
-                    print("\n✅ Конфигурация перезагружена")
+                            if signal:
+                                print(f"\n✅ Найден сигнал в группе {group}:")
+                                for key, value in signal.items():
+                                    print(f"  {key}: {value}")
+                            else:
+                                print(
+                                    f"\n❌ Сигнал не найден в тексте для группы {group}"
+                                )
+                        else:
+                            print("\n❌ Формат: test [TOTAL|BITCOIN|ETH] [текст]")
 
-                elif command.lower() == 'exit':
-                    print("\n👋 Завершение работы...")
-                    await self.watchdog.telegram.client.disconnect()
-                    break
+                    case "reload":
+                        self.watchdog.reload_config()
+                        print("✅ Конфигурация перезагружена")
 
-                else:
-                    print(f"\n❌ Неизвестная команда: {command}")
+                    case "exit":
+                        print("👋 Завершение работы...")
+                        await self.watchdog.telegram.client.disconnect()
+                        break
+
+                    case _:
+                        print(f"❌ Неизвестная команда: {command}")
 
             except KeyboardInterrupt:
-                print("\n👋 Завершение работы...")
+                print("👋 Завершение работы...")
                 await self.watchdog.telegram.client.disconnect()
                 break
 

@@ -18,7 +18,6 @@ from ..api.sender import ApiSender
 from ..telegram.service import TelegramService
 from ..console.interactive import InteractiveConsole
 
-# TODO: __init__.py files
 
 class TelegramWatchdog:
 
@@ -122,6 +121,11 @@ class TelegramWatchdog:
     def reload_config(self):
         self.config = ConfigLoader(self.config_path).load()
         logger.info("Конфигурация перезагружена")
+
+        # FIXME: НЕ обновляет Telegram подписки тк телетон продолжает слушать старые каналы
+        # они не одновляются а старые не отписываются. :USELESS:
+        # хз как фиксить пересобрать TelegramService?
+        # или добавить функцию для отписки от всех каналов и подписки заново?
 
     async def start(self):
         logger.info("Запуск Telegram Watchdog...")

@@ -89,9 +89,12 @@ class SignalParser:
         for parser in self.signal_parsers:
             if parser['group'] == group or parser['group'] == 'ALL':
                 match = parser['regex'].search(text)
+                
                 if match:
+                
                     try:
                         signal = parser['parse_func'](match, text, group)
+                
                         if signal:
                             signal['timestamp'] = datetime.utcnow().isoformat()
                             signal['channel'] = channel_name
@@ -100,7 +103,9 @@ class SignalParser:
                                 f"Найден сигнал в {group}: "
                                 f"{signal['action']} {signal['symbol']}"
                             )
+                
                             return signal
+                
                     except Exception as e:
                         logger.warning(
                             f"Ошибка в парсере {parser['name']}: {e}, "

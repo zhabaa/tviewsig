@@ -28,6 +28,10 @@ class TelegramService:
                 @self.client.on(events.NewMessage(chats=entity))
                 async def handler(event, group=group_name):
                     await self.message_handler(event, group)
+                    # FIXME: Telethon НЕ удаляет старые хендлеры
+                    # при reload_config() или повторном start()
+
+                    # добавить глобальный хендлер.
 
             except Exception as e:
                 logger.error(
@@ -36,13 +40,21 @@ class TelegramService:
                 )
 
     async def start(self):
-        logger.info("Запуск Telegram клиента...")
+        # До: была возможная потеря сообщений при запуске бота
+        # поскольку клиент создавался до хендлеров.
+        # :DONE:
+        logger.info("Подключение Хендлеров и запуск Telegram клиента...")
+
+        await self.monitor_channels()
+
+        logger.info("Все хендлеры подключены.")
 
         await self.client.start()
+
+        logger.info("Telegram клиент подключен.")
 
         me = await self.client.get_me()
         logger.info(f"Вошли как: {me.username or me.phone}")
 
-        await self.monitor_channels()
-
         logger.info("Telegram клиент запущен и слушает каналы")
+

@@ -45,7 +45,7 @@ class ConfigLoader:
             with open(self.config_path, 'w') as f:
                 json.dump(template, f, indent=2)
 
-            logger.error(f"Создан шаблон конфигурации в {self.config_path}. Заполните его!")
+            logger.warning(f"Создан шаблон конфигурации в {self.config_path}. Заполните его!")
             sys.exit(1)
 
         with open(self.config_path, 'r') as f:
