@@ -1,0 +1,35 @@
+{
+  "telegram_api_id": 8484924,
+  "telegram_api_hash": "d84f1af761c3be22a1132eb9d07e391f",
+  "api_endpoint": "http://api-server:8000/api/signals",
+  "api_key": "\u0432\u0430\u0448_api_\u043a\u043b\u044e\u0447",
+  "channels": {
+        "TOTAL": -1002487581313,
+        "BITCOIN": -1002319362918,
+        "ETH": -1002396019112
+  },
+  "parse_rules": {
+    "skip_keywords": [
+      "pin",
+      "\u0437\u0430\u043a\u0440\u0435\u043f",
+      "pinned",
+      "admin",
+      "\u0440\u0435\u043a\u043b\u0430\u043c\u0430",
+      "#Report",
+      "LongReport"
+    ],
+    "bot_names": {
+      "default": "Telegram_Watchdog",
+      "channel_mapping": {
+        "TOTAL": "TSB TOTAL",
+        "BITCOIN": "TSB BTC AI",
+        "ETH": "TSB ETH AI"
+      }
+    }
+  },
+  "monitoring": {
+    "check_interval": 300,
+    "retry_attempts": 3,
+    "retry_delay": 5
+  }
+}
