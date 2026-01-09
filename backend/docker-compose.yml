@@ -1,0 +1,17 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+    environment:
+      CLICKHOUSE_PASSWORD: TupayaFrigitnaya12312
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PASSWORD: TupayaFrigitnaya12312
+    depends_on:
+      - clickhouse

@@ -5,3 +5,4 @@ __pycache__/
 *.pyo
 *.pyd
 
+BOT_LOGS.log
