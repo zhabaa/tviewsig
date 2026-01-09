@@ -1,0 +1,403 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Аналитика - Панель управления{% endblock %}
+{% block page_title %}📊 Аналитика сигналов{% endblock %}
+
+{% block page_actions %}
+<div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group me-2">
+        <select id="timeRange" class="form-select form-select-sm">
+            <option value="7">Последние 7 дней</option>
+            <option value="30" selected>Последние 30 дней</option>
+            <option value="90">Последние 90 дней</option>
+            <option value="365">Последний год</option>
+        </select>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" onclick="updateCharts()">
+        <i class="bi bi-arrow-clockwise"></i> Обновить
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 20px;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Статистические карточки -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value" id="totalSignals">{{ stats.total_signals|default(0) }}</div>
+        <div class="stat-label">Всего сигналов</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="avgDaily">{{ stats.avg_daily|default(0) }}</div>
+        <div class="stat-label">Средне в день</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="uniqueBots">{{ stats.unique_bots|default(0) }}</div>
+        <div class="stat-label">Уникальных ботов</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="uniqueSymbols">{{ stats.unique_symbols|default(0) }}</div>
+        <div class="stat-label">Уникальных пар</div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- График по часам -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📈 Активность по часам</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+                <p class="text-muted small">Распределение сигналов по времени суток</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Распределение по ботам -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🤖 Распределение по ботам</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="botsChart"></canvas>
+                </div>
+                <p class="text-muted small">Топ 10 самых активных ботов</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Топ символов -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">💰 Топ торговых пар</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Пара</th>
+                                <th>Сигналов</th>
+                                <th>BUY</th>
+                                <th>SELL</th>
+                                <th>Соотношение</th>
+                                <th>Последняя цена</th>
+                            </tr>
+                        </thead>
+                        <tbody id="symbolsTable">
+                            {% for symbol in top_symbols %}
+                            <tr>
+                                <td><strong>{{ symbol.symbol }}</strong></td>
+                                <td>{{ symbol.signal_count }}</td>
+                                <td><span class="badge bg-success">{{ symbol.buy_count or 0 }}</span></td>
+                                <td><span class="badge bg-danger">{{ symbol.sell_count or 0 }}</span></td>
+                                <td>
+                                    {% set ratio = (symbol.buy_count / symbol.signal_count * 100) if symbol.signal_count > 0 else 0 %}
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" style="width: {{ ratio }}%">
+                                            {{ "%.0f"|format(ratio) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${{ "%.2f"|format(symbol.avg_price) if symbol.avg_price else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Статистика по дням -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📅 Активность по дням</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <p class="text-muted small">Сигналы за последние 30 дней</p>
+            </div>
+        </div>
+        
+        <!-- Действия -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">⚡️ Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="exportData()">
+                        <i class="bi bi-download"></i> Экспорт данных
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearOldData()">
+                        <i class="bi bi-trash"></i> Очистить старые данные
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Инициализация графиков
+let hourlyChart, botsChart, dailyChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    updateStats();
+});
+
+function initCharts() {
+    // График по часам
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    hourlyChart = new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Сигналов в час',
+                data: {{ hourly_stats|map(attribute='count')|list|tojson }},
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Количество сигналов'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Час дня'
+                    }
+                }
+            }
+        }
+    });
+    
+    // График по ботам
+    const botsCtx = document.getElementById('botsChart').getContext('2d');
+    botsChart = new Chart(botsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ top_bots|map(attribute='bot_name')|list|tojson|safe }},
+            datasets: [{
+                data: {{ top_bots|map(attribute='signal_count')|list|tojson }},
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                    '#9966FF', '#FF9F40', '#8AC926', '#1982C4',
+                    '#6A4C93', '#FF595E'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    
+    // График по дням
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    dailyChart = new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ daily_stats|map(attribute='date')|list|tojson }},
+            datasets: [{
+                label: 'Сигналов в день',
+                data: {{ daily_stats|map(attribute='count')|list|tojson }},
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+async function updateCharts() {
+    const days = document.getElementById('timeRange').value;
+    
+    try {
+        const response = await fetch(`/admin/api/analytics?days=${days}`);
+        const data = await response.json();
+        
+        // Обновляем графики
+        hourlyChart.data.datasets[0].data = data.hourly_data;
+        hourlyChart.update();
+        
+        botsChart.data.labels = data.top_bots_labels;
+        botsChart.data.datasets[0].data = data.top_bots_data;
+        botsChart.update();
+        
+        dailyChart.data.labels = data.daily_labels;
+        dailyChart.data.datasets[0].data = data.daily_data;
+        dailyChart.update();
+        
+        // Обновляем статистику
+        document.getElementById('totalSignals').textContent = data.total;
+        document.getElementById('avgDaily').textContent = data.avg_daily.toFixed(1);
+        document.getElementById('uniqueBots').textContent = data.unique_bots;
+        document.getElementById('uniqueSymbols').textContent = data.unique_symbols;
+        
+        // Обновляем таблицу
+        updateSymbolsTable(data.top_symbols);
+        
+    } catch (error) {
+        console.error('Error updating charts:', error);
+        alert('Ошибка обновления данных');
+    }
+}
+
+function updateSymbolsTable(symbols) {
+    const table = document.getElementById('symbolsTable');
+    table.innerHTML = '';
+    
+    symbols.forEach(symbol => {
+        const ratio = symbol.signal_count > 0 ? 
+            (symbol.buy_count / symbol.signal_count * 100) : 0;
+        
+        const row = `
+            <tr>
+                <td><strong>${symbol.symbol}</strong></td>
+                <td>${symbol.signal_count}</td>
+                <td><span class="badge bg-success">${symbol.buy_count || 0}</span></td>
+                <td><span class="badge bg-danger">${symbol.sell_count || 0}</span></td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: ${ratio}%">
+                            ${ratio.toFixed(0)}%
+                        </div>
+                    </div>
+                </td>
+                <td>$${symbol.avg_price ? symbol.avg_price.toFixed(2) : '—'}</td>
+            </tr>
+        `;
+        table.innerHTML += row;
+    });
+}
+
+async function updateStats() {
+    try {
+        const response = await fetch('/admin/api/quick-stats');
+        const data = await response.json();
+        
+        if (data.total_signals) {
+            document.getElementById('totalSignals').textContent = data.total_signals;
+            document.getElementById('todaySignals').textContent = data.today_signals;
+            document.getElementById('activeBots').textContent = data.active_bots;
+        }
+    } catch (error) {
+        console.error('Error updating stats:', error);
+    }
+}
+
+// Экспорт данных
+async function exportData() {
+    try {
+        const response = await fetch('/admin/api/export');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `signals_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Ошибка экспорта данных');
+    }
+}
+
+// Очистка старых данных
+async function clearOldData() {
+    if (!confirm('Удалить сигналы старше 90 дней? Это действие нельзя отменить.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/clear-old', { method: 'POST' });
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`Удалено ${result.deleted} старых записей`);
+            location.reload();
+        } else {
+            alert('Ошибка: ' + result.error);
+        }
+    } catch (error) {
+        alert('Ошибка сети');
+    }
+}
+
+// Автообновление каждые 60 секунд
+setInterval(updateStats, 60000);
+</script>
+{% endblock %}

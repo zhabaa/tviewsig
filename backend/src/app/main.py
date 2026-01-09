@@ -1,11 +1,20 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import logging
-from app.api.endpoints import signals, users
-from app.config import settings
-from app.core.database import db
+import os
+from pathlib import Path
 
+from app.api.endpoints import signals, users
+from app.api.admin.routes import router as admin_router
+from app.config import settings
+
+# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Создаем директории если их нет
+Path("src/app/api/admin/static").mkdir(exist_ok=True, parents=True)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -14,40 +23,57 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-@app.on_event("startup")
-def startup():
-    """Инициализация при запуске"""
-    try:
-        # Подключаемся к БД
-        db.connect()
-        logger.info("Database connected")
-    except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
+# Монтируем статические файлы для админки
+app.mount(
+    "/admin/static",
+    StaticFiles(directory="src/app/api/admin/static"),
+    name="admin_static"
+)
 
-# Роутеры
+# Настройка шаблонов для админки
+templates = Jinja2Templates(directory="src/app/api/admin/templates")
+
+# Подключаем роутеры
+
+# Основное API
 app.include_router(signals.router, prefix="/api/signals", tags=["signals"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+
+# Админ-панель
+app.include_router(admin_router, prefix="/admin", tags=["admin"])
 
 # Health check
 @app.get("/")
 async def root():
-    return {"app": settings.APP_NAME, "status": "running"}
+    return {
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "status": "running",
+        "endpoints": {
+            "api_docs": "/docs",
+            "admin_panel": "/admin",
+            "api_signals": "/api/signals/",
+            "api_users": "/api/users/"
+        }
+    }
 
 @app.get("/health")
 async def health():
     try:
+        from app.core.database import db
         client = db.get_client()
         client.command("SELECT 1")
         return {
-            "status": "healthy", 
+            "status": "healthy",
             "database": "connected",
-            "tables": {
-                "signals": True,
-                "users": True
-            }
+            "timestamp": datetime.utcnow().isoformat()
         }
     except Exception as e:
-        return {"status": "unhealthy", "database": str(e)}
+        return {
+            "status": "unhealthy",
+            "database": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 if __name__ == "__main__":
     import uvicorn

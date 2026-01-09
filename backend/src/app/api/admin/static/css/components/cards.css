@@ -1,0 +1,79 @@
+/* Стили для карточек */
+
+.card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.card-footer {
+    padding: 1rem 1.25rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+/* Статистические карточки */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.bg-primary { background: linear-gradient(135deg, #3498db, #2980b9); }
+.stat-card.bg-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+.stat-card.bg-info { background: linear-gradient(135deg, #1abc9c, #16a085); }
+.stat-card.bg-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}

@@ -1,0 +1,182 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Дашборд - Панель управления{% endblock %}
+{% block page_title %}📊 Дашборд{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Статистика в реальном времени -->
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Всего сигналов</h6>
+                        <h2 id="total-signals">{{ stats.total_signals|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-bell fs-1"></i>
+                </div>
+                <p class="card-text">За все время</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Сегодня</h6>
+                        <h2 id="today-signals">{{ stats.today_signals|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-calendar-day fs-1"></i>
+                </div>
+                <p class="card-text">Новых сигналов</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Активных ботов</h6>
+                        <h2 id="active-bots">{{ stats.active_bots|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-robot fs-1"></i>
+                </div>
+                <p class="card-text">Сегодня активны</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Последний сигнал</h6>
+                        <h6 id="last-signal">{{ stats.last_signal|default('Нет данных') }}</h6>
+                    </div>
+                    <i class="bi bi-clock-history fs-1"></i>
+                </div>
+                <p class="card-text">Время получения</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Последние сигналы -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📈 Последние сигналы</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_signals %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Бот</th>
+                                <th>Символ</th>
+                                <th>Действие</th>
+                                <th>Цена</th>
+                                <th>Комментарий</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for signal in recent_signals %}
+                            <tr>
+                                <td>{{ signal.timestamp.strftime('%H:%M:%S') }}</td>
+                                <td><span class="badge bg-secondary">{{ signal.bot_name }}</span></td>
+                                <td><strong>{{ signal.symbol }}</strong></td>
+                                <td>
+                                    {% if signal.action == 'BUY' %}
+                                    <span class="badge bg-success">BUY</span>
+                                    {% elif signal.action == 'SELL' %}
+                                    <span class="badge bg-danger">SELL</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ signal.action }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>${{ "%.2f"|format(signal.price) }}</td>
+                                <td><small>{{ signal.comment or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Нет данных о сигналах</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Статистика по ботам -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🤖 Активные боты</h5>
+            </div>
+            <div class="card-body">
+                {% if bots_stats %}
+                <ul class="list-group list-group-flush">
+                    {% for bot in bots_stats %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ bot.bot_name }}
+                        <span class="badge bg-primary rounded-pill">{{ bot.signal_count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Нет данных о ботах</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Пользователи -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">👥 Пользователи</h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Тип</th>
+                                <th>Регистрация</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    {% if user.is_premium %}
+                                    <span class="badge bg-success">Premium</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Basic</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Нет пользователей</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

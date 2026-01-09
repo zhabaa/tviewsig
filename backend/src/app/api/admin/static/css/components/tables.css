@@ -1,0 +1,136 @@
+/* Стили для таблиц */
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    background: white;
+}
+
+.table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    background-color: var(--secondary-color);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1rem;
+    border: none;
+}
+
+.table th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.table th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.table td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Полосы для четных строк */
+.table-striped tbody tr:nth-of-type(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Стили для ячеек с действиями */
+.action-cell {
+    width: 120px;
+    text-align: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+/* Бейджи в таблицах */
+.table-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.table-badge.buy {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: var(--success-color);
+}
+
+.table-badge.sell {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: var(--danger-color);
+}
+
+.table-badge.hold {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: var(--primary-color);
+}
+
+/* Пагинация */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.page-link {
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    margin: 0 2px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-color: var(--primary-color);
+}
+
+/* Состояние загрузки таблицы */
+.table-loading {
+    position: relative;
+    min-height: 200px;
+}
+
+.table-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

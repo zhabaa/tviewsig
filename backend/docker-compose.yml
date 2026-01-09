@@ -1,11 +1,4 @@
 services:
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    ports:
-      - "8123:8123"
-    environment:
-      CLICKHOUSE_PASSWORD: TupayaFrigitnaya12312
-
   api:
     build: .
     ports:
@@ -13,5 +6,12 @@ services:
     environment:
       CLICKHOUSE_HOST: clickhouse
       CLICKHOUSE_PASSWORD: TupayaFrigitnaya12312
+      DEBUG: "true"
     depends_on:
       - clickhouse
+    volumes:
+      - ./src:/app/src  # Монтируем для разработки
+      # Статические файлы будут доступны через src
+
+volumes:
+  clickhouse_data:
