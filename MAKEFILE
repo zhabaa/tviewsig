@@ -1,0 +1,31 @@
+.PHONY: up down build logs backend watchdog cli
+
+up:
+	docker-compose up -d
+
+down:
+	docker-compose down
+
+build:
+	docker-compose build --no-cache
+
+logs:
+	docker-compose logs -f
+
+logs-backend:
+	docker-compose logs -f backend
+
+logs-watchdog:
+	docker-compose logs -f watchdog
+
+backend:
+	docker-compose exec backend bash
+
+watchdog:
+	docker-compose exec watchdog bash
+
+clickhouse:
+	docker-compose exec clickhouse clickhouse-client
+
+restart:
+	docker-compose restart
