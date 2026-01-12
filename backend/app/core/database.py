@@ -77,3 +77,6 @@ class Database:
             self.connect()
 
         return self.client
+
+
+db = Database()

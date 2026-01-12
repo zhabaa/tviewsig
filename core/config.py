@@ -15,6 +15,10 @@ class Settings:
     CLICKHOUSE_DB: str = os.getenv("CLICKHOUSE_DB", "")
     CLICKHOUSE_PASSWORD: str = os.getenv("CLICKHOUSE_PASSWORD", "")
 
+    # ---
+    
+    ADMINPANEL_PASSWORD: str = os.getenv("ADMINPANEL_PASSWORD", "")
+
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
     @classmethod
@@ -24,6 +28,7 @@ class Settings:
         assert cls.CLICKHOUSE_USER, "CLICKHOUSE_USER is not set"
         assert cls.CLICKHOUSE_DB, "CLICKHOUSE_DB is not set"
         assert cls.CLICKHOUSE_PASSWORD, "CLICKHOUSE_PASSWORD is not set"
+        assert cls.ADMINPANEL_PASSWORD, "ADMINPANEL_PASSWORD is not set"
 
 
 settings = Settings()
