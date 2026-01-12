@@ -1,8 +1,9 @@
 .venv/
-.env/
+.env
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
 BOT_LOGS.log
+Makefile

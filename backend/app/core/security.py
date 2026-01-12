@@ -25,7 +25,7 @@ class Security:
         """Сгенерировать API ключ"""
         return secrets.token_urlsafe(32)
     
-    async def authenticate(self, api_key: Optional[str] = Header(None, alias="X-API-Key")) -> Dict:
+    def authenticate(self, api_key: Optional[str] = Header(None, alias="X-API-Key")) -> Dict:
         """Аутентифицировать пользователя"""
         if not api_key:
             raise HTTPException(
@@ -33,10 +33,10 @@ class Security:
                 detail="API key required"
             )
         
-        client = await db.get_client()
+        client = db.get_client()
         
         # Получаем всех пользователей
-        result = await client.query("SELECT username, api_key_hash, is_premium FROM users")
+        result = client.query("SELECT username, api_key_hash, is_premium FROM users")
         
         for username, stored_hash, is_premium in result.result_rows:
             if self.verify_api_key(api_key, stored_hash):
@@ -50,5 +50,5 @@ class Security:
             detail="Invalid API key"
         )
 
-# Глобальный экземпляр
+
 security = Security()

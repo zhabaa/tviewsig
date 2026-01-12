@@ -1,11 +1,24 @@
 <?xml version="1.0"?>
 <yandex>
+    <!-- Логирование -->
     <logger>
         <level>information</level>
         <log>/var/log/clickhouse-server/clickhouse-server.log</log>
         <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+        <console>true</console>
     </logger>
+    
     <listen_host>0.0.0.0</listen_host>
-    <http_port>8123</http_port>
-    <tcp_port>9000</tcp_port>
+    
+    <http_port>${CLICKHOUSE_HTTP_PORT:-8123}</http_port>
+    <tcp_port>${CLICKHOUSE_TCP_PORT:-9000}</tcp_port>
+    <mysql_port>${CLICKHOUSE_MYSQL_PORT:-9004}</mysql_port>
+    
+    <max_query_size>1073741824</max_query_size>
+    <max_ast_depth>1000</max_ast_depth>
+    
+    <path>/var/lib/clickhouse/</path>
+    <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+    
+    <users_config>users.xml</users_config>
 </yandex>

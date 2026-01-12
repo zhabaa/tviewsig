@@ -2,10 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY src/requirements.txt .
+# Копируем зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ .
+# Копируем исходный код
+COPY src/ ./src/
+COPY watchdog_config.json ./
 
-CMD ["python", "bot.py"]
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
+CMD ["python", "-u", "src/bot.py"]

@@ -3,67 +3,74 @@ version: '3.9'
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
-    container_name: crypto_clickhouse
+    container_name: tviewsig-clickhouse
     ports:
-      - "8123:8123"  # HTTP порт
-      - "9000:9000"  # Native порт
+      - "${CLICKHOUSE_HOST_HTTP_PORT:-8123}:${CLICKHOUSE_HTTP_PORT:-8123}"
+      - "${CLICKHOUSE_HOST_TCP_PORT:-9000}:${CLICKHOUSE_TCP_PORT:-9000}"
     environment:
-      - CLICKHOUSE_DB=tv_signals
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=TupayaFrigitnaya12312
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
     volumes:
+      - ./backend/clickhouse-config:/etc/clickhouse-server/config.d:ro
+      - ./backend/clickhouse-users:/etc/clickhouse-server/users.d:ro
       - clickhouse_data:/var/lib/clickhouse
+    env_file:
+      - .env
+      - clickhouse-ports.env  # Импортируем порты
     healthcheck:
-      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      test: ["CMD", "clickhouse-client", "--host", "localhost", "--user", "${CLICKHOUSE_USER}", "--password", "${CLICKHOUSE_PASSWORD}", "--query", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  api-server:
-    build: ./backend/
-    container_name: crypto_api
+  backend:
+    build: ./backend
+    container_name: tviewsig-backend
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:8000"
     depends_on:
       clickhouse:
         condition: service_healthy
     environment:
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
-      - CLICKHOUSE_DB=tv_signals
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=TupayaFrigitnaya12312
-    restart: unless-stopped
-
-  management-panel:
-    build: ./manager/
-    container_name: crypto_panel
-    ports:
-      - "8001:8001"
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-      api-server:
-        condition: service_started
-    environment:
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
-      - CLICKHOUSE_DB=tv_signals
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=TupayaFrigitnaya12312
-    restart: unless-stopped
-
-  wachdog:
-    build: ./wachdog/
-    container_name: crypto_wachdog
-    depends_on:
-      api-server:
-        condition: service_started
-    environment:
-      - API_ENDPOINT=http://api-server:8000/api/signals
+      # ClickHouse (порты берем из общего файла)
+      - CLICKHOUSE_HOST=${CLICKHOUSE_HOST}
+      - CLICKHOUSE_PORT=${CLICKHOUSE_TCP_PORT}  # Используем TCP порт
+      - CLICKHOUSE_HTTP_PORT=${CLICKHOUSE_HTTP_PORT}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      # FastAPI
+      - HOST=${BACKEND_HOST}
+      - PORT=8000
+      - RELOAD=${BACKEND_RELOAD}
+    env_file:
+      - .env
+      - clickhouse-ports.env  # Импортируем порты
     volumes:
-      - ./wachdog/src/signal_watchdog_session.session:/app/signal_watchdog_session.session
+      - ./backend/src:/app/src
+    restart: unless-stopped
+
+  watchdog:
+    build: ./watchdog
+    container_name: tviewsig-watchdog
+    depends_on:
+      - clickhouse
+    environment:
+      # ClickHouse (порты берем из общего файла)
+      - CLICKHOUSE_HOST=${CLICKHOUSE_HOST}
+      - CLICKHOUSE_PORT=${CLICKHOUSE_TCP_PORT}  # Используем TCP порт
+      - CLICKHOUSE_HTTP_PORT=${CLICKHOUSE_HTTP_PORT}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+    env_file:
+      - .env
+      - clickhouse-ports.env  # Импортируем порты
+    volumes:
+      - ./watchdog:/app
+      - ./watchdog/signal_watchdog_session.session:/app/signal_watchdog_session.session
     restart: unless-stopped
 
 volumes:
