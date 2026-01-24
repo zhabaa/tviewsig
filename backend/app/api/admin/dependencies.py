@@ -9,7 +9,6 @@ from core.config import settings
 logger = get_logger(__name__)
 
 
-
 def verify_admin_key(request: Request):
     admin_key = request.headers.get("X-Admin-Key")
 
